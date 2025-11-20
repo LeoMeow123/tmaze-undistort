@@ -195,7 +195,7 @@ class TMazeUndistortionPipeline:
         width_m = xmax - xmin
         height_m = ymax - ymin
 
-        # Choose meters-per-pixel to fit maze in canvas
+        # Choose meters-per-pixel to fit maze in canvas (matches notebook approach)
         self.meters_per_pixel = max(width_m / float(w), height_m / float(h))
 
         # Size of fitted maze in pixels
@@ -232,6 +232,64 @@ class TMazeUndistortionPipeline:
         print(f"Homography RMS: {rms_h:.2f} canvas pixels")
         print(f"Canvas size: {self.canvas_size[0]}×{self.canvas_size[1]} px")
         print(f"Meters per pixel: {self.meters_per_pixel:.6f} m/px ({1000*self.meters_per_pixel:.3f} mm/px)")
+
+    def _estimate_meters_per_pixel(self) -> float:
+        """
+        Estimate meters-per-pixel scale from calibrated camera and physical measurements.
+
+        Uses a reference segment's undistorted width to compute the true scale.
+
+        Returns:
+            Meters per pixel in the undistorted image space
+        """
+        # Choose a reference segment (prefer segment2 or segment3)
+        ref_segment = None
+        for key in ['segment2', 'segment3', 'segment4', 'junction']:
+            if key in self.video_polygons and key in self.model_polygons:
+                ref_segment = key
+                break
+
+        if ref_segment is None:
+            # Fallback: use fitting approach
+            h, w = self.image_size[1], self.image_size[0]
+            all_m = np.concatenate([
+                np.asarray(p.exterior.coords) for p in self.model_polygons.values()
+            ], axis=0)
+            width_m = all_m[:, 0].max() - all_m[:, 0].min()
+            height_m = all_m[:, 1].max() - all_m[:, 1].min()
+            return max(width_m / float(w), height_m / float(h))
+
+        # Get the reference segment from video (in distorted pixels)
+        video_poly = self.video_polygons[ref_segment]
+        video_pts = np.asarray(video_poly.exterior.coords)[:-1].astype(np.float32)
+
+        # Undistort the segment points
+        und_pts = cv2.undistortPoints(
+            video_pts.reshape(-1, 1, 2),
+            self.K, self.dist, P=self.newK
+        ).reshape(-1, 2)
+
+        # Estimate width from top and bottom edges
+        # Sort by Y to find top and bottom pairs
+        ys = und_pts[:, 1]
+        top_two = np.argsort(ys)[:2]
+        bot_two = np.argsort(ys)[-2:]
+
+        w_top = np.linalg.norm(und_pts[top_two[1]] - und_pts[top_two[0]])
+        w_bot = np.linalg.norm(und_pts[bot_two[1]] - und_pts[bot_two[0]])
+        width_px = (w_top + w_bot) * 0.5
+
+        # Get physical width from model
+        model_poly = self.model_polygons[ref_segment]
+        model_pts = np.asarray(model_poly.exterior.coords)[:-1]
+        model_width = np.linalg.norm(model_pts[1] - model_pts[0])
+
+        # Calculate scale
+        meters_per_px = model_width / width_px
+
+        print(f"Reference segment '{ref_segment}': {width_px:.1f} px = {model_width:.3f} m")
+
+        return meters_per_px
 
     def load_existing_calibration(self) -> Dict:
         """
