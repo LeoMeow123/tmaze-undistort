@@ -15,11 +15,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Basic usage (auto-detects ROI file)
+  # Basic usage (preserves original resolution and FPS)
   tmaze-undistort video.mp4 -o undistorted.mp4
 
-  # Specify ROI file explicitly
-  tmaze-undistort video.mp4 --roi video.rois.yml -o undistorted.mp4
+  # With background masking
+  tmaze-undistort video.mp4 -o undistorted.mp4 --mask
+
+  # With masking and cropping (changes resolution)
+  tmaze-undistort video.mp4 -o undistorted.mp4 --mask --crop
 
   # Save calibration for reuse
   tmaze-undistort video.mp4 -o undistorted.mp4 --save-calibration calib.yml
@@ -29,9 +32,6 @@ Examples:
 
   # Custom maze dimensions
   tmaze-undistort video.mp4 -o out.mp4 --maze-width 0.12 --segment-length 0.25
-
-  # Skip masking/cropping
-  tmaze-undistort video.mp4 -o out.mp4 --no-mask --no-crop
         """
     )
 
@@ -122,15 +122,15 @@ Examples:
     # Output options
     output_group = parser.add_argument_group("output options")
     output_group.add_argument(
-        "--no-mask",
+        "--mask",
         action="store_true",
-        help="Disable masking (keep background)"
+        help="Apply mask to remove background outside maze (changes output)"
     )
 
     output_group.add_argument(
-        "--no-crop",
+        "--crop",
         action="store_true",
-        help="Disable cropping to maze bounds"
+        help="Crop output to maze bounds (changes resolution)"
     )
 
     output_group.add_argument(
@@ -198,8 +198,8 @@ Examples:
 
         pipeline.undistort_video(
             output_path=args.output,
-            apply_mask=not args.no_mask,
-            crop_to_maze=not args.no_crop,
+            apply_mask=args.mask,
+            crop_to_maze=args.crop,
             interpolation=args.interpolation,
             show_progress=not args.no_progress
         )
