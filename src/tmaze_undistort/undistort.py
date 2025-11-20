@@ -186,9 +186,11 @@ class TMazeUndistortionPipeline:
         # Set up canvas that matches input image size
         h, w = self.image_size[1], self.image_size[0]
 
-        # Get model bounds
+        # Get model bounds from FULL maze model (all segments, not just matched ones)
+        # This preserves unlabeled but visible maze areas (e.g., segment1)
+        full_model_polygons = self.maze_model.get_roi_polygons()
         all_m = np.concatenate([
-            np.asarray(p.exterior.coords) for p in self.model_polygons.values()
+            np.asarray(p.exterior.coords) for p in full_model_polygons.values()
         ], axis=0)
         xmin, xmax = all_m[:, 0].min(), all_m[:, 0].max()
         ymin, ymax = all_m[:, 1].min(), all_m[:, 1].max()
@@ -428,9 +430,10 @@ class TMazeUndistortionPipeline:
         W_out, H_out = self.canvas_size
         mask = np.zeros((H_out, W_out), dtype=np.uint8)
 
-        # Get model bounds
+        # Get model bounds from FULL maze model (same as in _compute_homography)
+        full_model_polygons = self.maze_model.get_roi_polygons()
         all_m = np.concatenate([
-            np.asarray(p.exterior.coords) for p in self.model_polygons.values()
+            np.asarray(p.exterior.coords) for p in full_model_polygons.values()
         ], axis=0)
         xmin = all_m[:, 0].min()
         ymax = all_m[:, 1].max()
@@ -450,8 +453,9 @@ class TMazeUndistortionPipeline:
             y_px = (ymax - mxy[:, 1]) / self.meters_per_pixel + oy
             return np.column_stack([x_px, y_px]).astype(np.int32)
 
-        # Draw each ROI on mask
-        for name, poly in self.model_polygons.items():
+        # Draw ALL model segments on mask (including unlabeled ones like segment1)
+        # This preserves visible but unlabeled maze areas for further analysis
+        for name, poly in full_model_polygons.items():
             pts_m = np.asarray(poly.exterior.coords)[:-1]
             pts_c = meters_to_canvas_xy(pts_m)
             cv2.fillPoly(mask, [pts_c], 255)
