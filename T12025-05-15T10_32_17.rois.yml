@@ -1,0 +1,109 @@
+image_file: /Users/talmo/Library/CloudStorage/GoogleDrive-talmo@talmolab.org/My Drive/data/lee/2025-06
+  - T-maze/APPTAU6M/DAY1/G1/1/T12025-05-15T10_32_17.mp4
+roi_count: 6
+rois:
+- id: 1
+  name: arm_right
+  type: polygon
+  coordinates:
+  - - 216.76024670379076
+    - 180.47635006081384
+  - - 226.75982879230844
+    - 75.09613882028123
+  - - 519.8245038480958
+    - 62.78896086518262
+  - - 523.6704969590642
+    - 170.47676797229622
+  color: '#1f77b4'
+  properties:
+    vertex_count: 4
+    perimeter: 814.0061316085469
+    area: 31924.550440393883
+- id: 2
+  name: junction
+  type: polygon
+  coordinates:
+  - - 525.41652367348
+    - 170.40457845283072
+  - - 520.4781634002688
+    - 62.58371248771914
+  - - 649.6985905492955
+    - 64.22983257878957
+  - - 645.5832903216195
+    - 170.40457845283083
+  color: '#aec7e8'
+  properties:
+    vertex_count: 4
+    perimeter: 463.5860469728394
+    area: 13341.602566449214
+- id: 3
+  name: arm_left
+  type: polygon
+  coordinates:
+  - - 648.0524704582251
+    - 170.40457845283072
+  - - 652.1677706859011
+    - 65.87595266986
+  - - 933.6543062589401
+    - 90.56775403591632
+  - - 941.884906714292
+    - 190.15801954567553
+  color: '#ff7f0e'
+  properties:
+    vertex_count: 4
+    perimeter: 781.6025014220031
+    area: 29312.641288255043
+- id: 4
+  name: segment2
+  type: polygon
+  coordinates:
+  - - 528.119520250106
+    - 859.1131524273503
+  - - 640.9520701595641
+    - 851.5909824333864
+  - - 640.1998531601677
+    - 619.1559296199031
+  - - 522.1017842549351
+    - 633.4480526084344
+  color: '#ffbb78'
+  properties:
+    vertex_count: 4
+    perimeter: 690.2243384087161
+    area: 26484.258366151356
+- id: 5
+  name: segment3
+  type: polygon
+  coordinates:
+  - - 520.5973502561421
+    - 633.4480526084344
+  - - 640.9520701595641
+    - 619.155929619903
+  - - 640.1998531601675
+    - 383.71200880883396
+  - - 522.8540012543313
+    - 392.73861280159065
+  color: '#2ca02c'
+  properties:
+    vertex_count: 4
+    perimeter: 715.0580009662955
+    area: 28286.71115052465
+- id: 6
+  name: segment4
+  type: polygon
+  coordinates:
+  - - 523.235685252439
+    - 392.09559019631024
+  - - 640.6983184171289
+    - 384.9766427317836
+  - - 642.7323034069935
+    - 170.39122630105112
+  - - 525.2696702423038
+    - 170.89972254851762
+  color: '#98df8a'
+  properties:
+    vertex_count: 4
+    perimeter: 670.9421699727185
+    area: 25586.251502866024
+metadata:
+  created_with: ROI Labeling Tool
+  format_version: '1.0'
