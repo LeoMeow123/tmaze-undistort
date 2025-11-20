@@ -235,7 +235,7 @@ class TMazeUndistortionPipeline:
 
     def load_existing_calibration(self) -> Dict:
         """
-        Load calibration from saved file.
+        Load calibration from saved file and compute homography.
 
         Returns:
             Dictionary with calibration parameters
@@ -259,13 +259,35 @@ class TMazeUndistortionPipeline:
 
         print(f"Loaded calibration with RMS error: {self.rms_error:.4f} pixels")
 
+        # Load ROI polygons and compute homography
+        print(f"Loading ROIs: {self.roi_path}")
+        if not self.roi_path.exists():
+            raise FileNotFoundError(
+                f"ROI file not found: {self.roi_path}\n"
+                f"ROI file is required to compute homography for rectification."
+            )
+
+        self.video_polygons = load_rois(self.roi_path)
+        print(f"Loaded {len(self.video_polygons)} ROI segments: {list(self.video_polygons.keys())}")
+
+        # Get model polygons
+        available_segments = tuple(self.video_polygons.keys())
+        self.model_polygons = self.maze_model.get_roi_polygons(segments=available_segments)
+
+        # Extract correspondences and compute homography
+        model_pts, img_pts = extract_centroid_correspondences(
+            self.model_polygons, self.video_polygons
+        )
+        print(f"Computing homography for rectification...")
+        self._compute_homography(model_pts, img_pts)
+
         return calib
 
     def undistort_video(
         self,
         output_path: str,
-        apply_mask: bool = True,
-        crop_to_maze: bool = True,
+        apply_mask: bool = False,
+        crop_to_maze: bool = False,
         interpolation: str = "linear",
         show_progress: bool = True
     ) -> None:
@@ -274,10 +296,14 @@ class TMazeUndistortionPipeline:
 
         Args:
             output_path: Path to save output video
-            apply_mask: If True, mask background outside maze regions
-            crop_to_maze: If True, crop output to maze bounding box
+            apply_mask: If True, mask background outside maze regions (default: False, keeps original resolution)
+            crop_to_maze: If True, crop output to maze bounding box (default: False, keeps original resolution)
             interpolation: Interpolation method ("linear", "cubic", "lanczos4")
             show_progress: Show progress bar
+
+        Note:
+            By default, output video will have the same resolution and FPS as input.
+            Enable apply_mask and/or crop_to_maze to modify the output.
         """
         if self.K is None or self.H_u2c is None:
             raise RuntimeError("Must call calibrate() or load_existing_calibration() first")
