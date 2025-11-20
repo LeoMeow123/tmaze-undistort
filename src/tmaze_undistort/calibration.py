@@ -52,7 +52,7 @@ def calibrate_camera(
     # Build calibration flags
     flags = 0
     flags |= cv2.CALIB_USE_INTRINSIC_GUESS
-    flags |= cv2.CALIB_FIX_SKEW  # Assume skew = 0
+    # Note: Skew is typically 0 by default in OpenCV calibration
 
     if fix_principal_point:
         flags |= cv2.CALIB_FIX_PRINCIPAL_POINT
