@@ -24,6 +24,57 @@ pip install -e .
 
 ## Quick Start
 
+### 0. Test if Undistortion is Needed (Optional)
+
+If your videos contain a charuco board, you can test whether undistortion is necessary:
+
+```bash
+# Test a single video
+python 02.test_distortion_need.py video.mp4
+
+# Test all videos in a directory (automatically saves CSV, JSON, and log files)
+python 02.test_distortion_need.py /path/to/videos/ --batch
+
+# Customize output file names
+python 02.test_distortion_need.py /path/to/videos/ --batch \
+    --output-csv results.csv \
+    --output-json results.json \
+    --output-log summary.txt
+
+# Customize charuco board parameters (defaults: 14x9, 20mm squares, 15mm markers, DICT_5X5)
+python 02.test_distortion_need.py video.mp4 \
+    --squares-x 14 --squares-y 9 \
+    --square-length 0.02 --marker-length 0.015 \
+    --dictionary DICT_5X5_250
+```
+
+The tool analyzes the charuco board geometry and provides three metrics:
+- **Line Straightness**: Measures edge curvature (< 2.0 px is good)
+- **Spacing Uniformity**: Measures corner spacing consistency (< 0.05 is good)
+- **Reprojection Error**: Measures fit to pinhole model (< 5.0 px is good)
+
+**Batch mode automatically generates:**
+- `distortion_test_results_<timestamp>.csv` - Spreadsheet with all metrics
+- `distortion_test_results_<timestamp>.json` - Machine-readable JSON format
+- `distortion_test_log_<timestamp>.txt` - Human-readable summary log
+
+Output example:
+```
+============================================================
+Distortion Analysis for: video_001.mp4
+============================================================
+Frames analyzed: 10/10
+
+Metrics:
+  Line straightness:      1.234 px (threshold: 2.0 px)
+  Spacing uniformity:     0.0321 (threshold: 0.05)
+  Reprojection error:     2.456 px (threshold: 5.0 px)
+
+============================================================
+Recommendation: NO UNDISTORTION NEEDED
+============================================================
+```
+
 ### 1. Label ROI Regions
 
 Use a ROI labeling tool (e.g., [labelroi](https://github.com/talmolab/labelroi)) to mark the maze segments in your video. The tool will generate a `.rois.yml` file.
@@ -51,6 +102,12 @@ tmaze-undistort video.mp4 -o undistorted.mp4
 
 # Specify ROI file explicitly
 tmaze-undistort video.mp4 --roi video.rois.yml -o undistorted.mp4
+
+# With background masking
+tmaze-undistort video.mp4 -o undistorted.mp4 --mask
+
+# With masking and cropping (changes output resolution)
+tmaze-undistort video.mp4 -o undistorted.mp4 --mask --crop
 
 # Save calibration for reuse
 tmaze-undistort video.mp4 -o undistorted.mp4 --save-calibration calib.yml
@@ -118,9 +175,9 @@ pipeline = TMazeUndistortionPipeline(
 - `--no-tangential`: Disable tangential distortion estimation
 
 ### Output Options
-- `--no-mask`: Disable background masking
-- `--no-crop`: Disable cropping to maze bounds
-- `--interpolation`: Interpolation method (linear, cubic, lanczos4)
+- `--mask`: Apply mask to remove background outside maze (default: disabled)
+- `--crop`: Crop output to maze bounds, changes resolution (default: disabled)
+- `--interpolation`: Interpolation method (linear, cubic, lanczos4, default: linear)
 - `--no-progress`: Disable progress bar
 
 ## How It Works
@@ -168,6 +225,9 @@ tmaze-undistort scaled_video.mp4 -o undistorted.mp4 --maze-width 0.15
 ### Batch Processing
 
 ```bash
+# Test which videos need undistortion
+python 02.test_distortion_need.py /path/to/videos/ --batch
+
 # Process multiple videos with same calibration
 tmaze-undistort video1.mp4 -o out1.mp4 --save-calibration calib.yml
 tmaze-undistort video2.mp4 -o out2.mp4 --calibration calib.yml
